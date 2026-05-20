@@ -47,74 +47,6 @@ const CHALLENGE_APPROACHES = {
   ]
 };
 
-
-const LIP_SYNC_SONGS = [
-  {
-    id: "club_anthem",
-    type: "club anthem",
-    favors: ["energy", "stunts"],
-    trait: "Lip Sync Beast",
-    intro: "The bass hits first, then the lights begin chasing the queens across the stage."
-  },
-  {
-    id: "power_ballad",
-    type: "power ballad",
-    favors: ["emotion", "lyrics"],
-    trait: "Emotional",
-    intro: "The first note hangs in the air, demanding control, face, and real feeling."
-  },
-  {
-    id: "camp_pop",
-    type: "camp pop number",
-    favors: ["humor", "energy"],
-    trait: "Meme Queen",
-    intro: "The judges are waiting for timing, stupidity, and one perfect camera moment."
-  },
-  {
-    id: "diva_classic",
-    type: "diva classic",
-    favors: ["lyrics", "emotion"],
-    trait: "Pageant Polish",
-    intro: "Every lyric needs intention. Every pose needs to feel expensive."
-  },
-  {
-    id: "dance_break",
-    type: "dance break track",
-    favors: ["stunts", "energy"],
-    trait: "Dance Training",
-    intro: "The tempo leaves almost no place to hide."
-  }
-];
-
-const LIP_SYNC_STRATEGIES = [
-  {
-    id: "emotion",
-    label: "Emotional connection",
-    text: "Sell the song through face, vulnerability and control."
-  },
-  {
-    id: "stunts",
-    label: "Stunts and reveals",
-    text: "Go for splits, reveals and shock moments. High reward, high risk."
-  },
-  {
-    id: "lyrics",
-    label: "Lyric precision",
-    text: "Lock into every word and make the song look written for you."
-  },
-  {
-    id: "humor",
-    label: "Comedy interpretation",
-    text: "Turn the song into a character moment and try to make the judges laugh."
-  },
-  {
-    id: "energy",
-    label: "Full-stage energy",
-    text: "Use movement, urgency and presence to dominate the camera."
-  }
-];
-
-
 const RUNWAY_CHOICES = [
   { id: "signature", label: "Signature look", text: "A reliable look that represents your drag clearly.", budget: 100, score: 62, originality: 5, polish: 6, risk: 0.12 },
   { id: "designer", label: "Call a designer contact", text: "A more expensive, polished runway package.", budget: 320, score: 76, originality: 6, polish: 9, risk: 0.10 },
@@ -602,10 +534,10 @@ function showRunwayCeremony() {
       kicker: "judges' panel",
       title: "Some of you are safe",
       body: `<p>The judges call the queens one by one.</p>${safe.length ? safe.map(r => `<div class="announcement safe-card"><b>${r.queen.name}</b>, you are safe.</div>`).join("") : `<p>No one is simply safe tonight.</p>`}`,
-      button: "Announce the tops"
+      button: "Announce the top 3"
     },
     {
-      kicker: "top queens",
+      kicker: "top 3",
       title: "The three best queens of the week",
       body: `${top.map(r => `<div class="announcement top-card"><b>${r.queen.name}</b><span>${r.placement === "WIN" ? "Top performance" : "High placement"}</span></div>`).join("")}`,
       button: "Reveal the winner"
@@ -614,13 +546,19 @@ function showRunwayCeremony() {
       kicker: "winner reveal",
       title: `${winner.queen.name}, condragulations`,
       body: `<p>You are the winner of this week's challenge.</p><div class="winner-spotlight">${winner.queen.name}</div>` ,
-      button: "Announce the bottoms"
+      button: "Announce the bottom 3"
     },
     {
-      kicker: "bottom queens",
+      kicker: "bottom 3",
       title: "The three weakest critiques",
-      body: `${low ? `<div class="announcement low-card"><b>${low.queen.name}</b>, your performance worried the judges, but you are safe.</div>` : ""}${bottom.map(r => `<div class="announcement bottom-card"><b>${r.queen.name}</b>, you are up for elimination.</div>`).join("")}`,
-      button: "Go to lip sync"
+      body: `${[low, ...bottom].filter(Boolean).map(r => `<div class="announcement ${r.placement === "LOW" ? "low-card" : "bottom-card"}"><b>${r.queen.name}</b><span>${r.placement === "LOW" ? "The judges are worried, but your runway helps you survive." : "The judges are still deciding your fate."}</span></div>`).join("")}`,
+      button: "Reveal the bottom 2"
+    },
+    {
+      kicker: "bottom 2",
+      title: "Two queens stand before the judges",
+      body: `${low ? `<div class="announcement low-card"><b>${low.queen.name}</b><span>You are safe. Step to the back of the stage.</span></div>` : ""}${bottom.map(r => `<div class="announcement bottom-card"><b>${r.queen.name}</b><span>You are up for elimination.</span></div>`).join("")}<p class="stage-direction">The safe queens step back. The stage clears for the lip sync.</p>`,
+      button: "Ir para o Lip Sync"
     }
   ];
   const page = pages[step];
@@ -638,7 +576,7 @@ function showRunwayCeremony() {
 
 function nextRunwayReveal() {
   gameState.temp.revealStep = (gameState.temp.revealStep || 0) + 1;
-  if (gameState.temp.revealStep <= 4) return showRunwayCeremony();
+  if (gameState.temp.revealStep <= 5) return showRunwayCeremony();
   const bottom = gameState.temp.results.filter(r => r.placement === "BTM2");
   if (bottom.some(r => r.queen.isPlayer)) showPlayerLipSync(bottom);
   else showNpcLipSyncIntro(bottom);
@@ -661,7 +599,7 @@ function showPlayerLipSync(bottom) {
     <section class="panel tv-fade lip-sync-stage cinematic lip-sync-fullscreen">
       <div class="lower-third">lip sync for your life</div>
       <h2>${player().name} vs ${opponent.name}</h2>
-      <p class="stage-direction">The main stage goes dark. A single spotlight cuts across the floor. The song is a <b>${song.type}</b>, and every judge is watching for survival, not safety.</p>
+      <div class="song-card"><span>Tonight's lip sync song</span><b>“${song.title}”</b><small>${song.artist} • ${song.type}</small></div><p class="stage-direction">The main stage goes dark. A single spotlight cuts across the floor. Every judge is watching for survival, not safety.</p>
       <div class="lip-battle pre-battle">
         <article class="card lip-card hero-lip-card">
           <div class="kicker">you</div>
@@ -688,7 +626,7 @@ function showNpcLipSyncIntro(bottom) {
     <section class="panel tv-fade lip-sync-stage cinematic lip-sync-fullscreen">
       <div class="lower-third">lip sync for your life</div>
       <h2>${bottom.map(r => r.queen.name).join(" vs ")}</h2>
-      <p class="stage-direction">The safe queens step back. The lights drop into deep pink and violet. The song is a <b>${song.type}</b>.</p>
+      <div class="song-card"><span>Tonight's lip sync song</span><b>“${song.title}”</b><small>${song.artist} • ${song.type}</small></div><p class="stage-direction">The safe queens step back. The lights drop into deep pink and violet.</p>
       <div class="lip-battle pre-battle">
         ${bottom.map(r => `<article class="card lip-card hero-lip-card"><div class="kicker">bottom two</div><h3>${r.queen.name}</h3><p>${r.queen.name} takes position, trying to turn a bad critique into one unforgettable stage moment.</p></article>`).join("")}
       </div>
@@ -732,7 +670,7 @@ function showLipSyncPerformance() {
     <section class="panel tv-fade lip-sync-stage cinematic lip-sync-fullscreen">
       <div class="lower-third">lip sync for your life</div>
       <h2>${lipResults.map(r => r.queen.name).join(" vs ")}</h2>
-      <p class="stage-direction">The song is a <b>${pending.song.type}</b>. The camera cuts between the queens, the judges, and the cast watching from the back of the stage.</p>
+      <div class="song-card"><span>Tonight's lip sync song</span><b>“${pending.song.title}”</b><small>${pending.song.artist} • ${pending.song.type}</small></div><p class="stage-direction">The camera cuts between the queens, the judges, and the cast watching from the back of the stage.</p>
 
       <div class="versus-banner">
         <span>${left.queen.name}</span>
@@ -749,7 +687,7 @@ function showLipSyncPerformance() {
       </div>
 
       <div class="footer-actions row">
-        <button onclick="showLipSyncDecision()">Reveal the judges' decision</button>
+        <button onclick="showLipSyncDecision()">Revelar decisão dos jurados</button>
         <button class="secondary" onclick="showTrackRecord()">Track record</button>
       </div>
     </section>`;
@@ -759,10 +697,11 @@ function renderLipSyncTimeline(lipResults) {
   const first = lipResults[0];
   const second = lipResults[1];
   return `
-    <div class="timeline-beat"><b>Opening beat</b><p>${first.queen.name} catches the first lyric with ${strategyLabel(first.strategy)}, while ${second.queen.name} answers with ${strategyLabel(second.strategy)}.</p></div>
-    <div class="timeline-beat"><b>First judge reaction</b><p>${first.event.text}. The judges lean forward, trying to decide whether the moment is controlled or chaotic.</p></div>
-    <div class="timeline-beat"><b>Mid-song risk</b><p>${second.event.text}. The cast at the back reacts as the performance starts to split into two very different interpretations.</p></div>
-    <div class="timeline-beat"><b>Final chorus</b><p>Both queens push for the last camera shot. One feels inevitable. The other looks like they are fighting the edit itself.</p></div>`;
+    <div class="timeline-beat"><b>Início da música</b><p>${first.queen.name} catches the first lyric with ${strategyLabel(first.strategy)}, while ${second.queen.name} answers with ${strategyLabel(second.strategy)}.</p></div>
+    <div class="timeline-beat"><b>Primeiro destaque</b><p>${first.event.text}. The first big camera cut belongs to the queen who looks most in control.</p></div>
+    <div class="timeline-beat"><b>Momento de risco</b><p>${second.event.text}. The cast at the back reacts as the performance starts to split into two very different interpretations.</p></div>
+    <div class="timeline-beat"><b>Reação dos jurados</b><p>The judges lean forward, trying to decide whether the moment is controlled, desperate, funny, or iconic.</p></div>
+    <div class="timeline-beat"><b>Clímax</b><p>Both queens push for the last camera shot. One feels inevitable. The other looks like they are fighting the edit itself.</p></div>`;
 }
 
 function showLipSyncDecision() {
@@ -779,12 +718,22 @@ function showLipSyncDecision() {
         <div class="announcement top-card decision-card"><b>${winner.queen.name}</b><span>Shantay, you stay.</span></div>
         <div class="announcement bottom-card decision-card"><b>${eliminated.queen.name}</b><span>Sashay away.</span></div>
       </div>
-      <p class="mirror-line">${eliminated.queen.name} leaves the stage with one last look back at the lights.</p>
+      <p class="mirror-line">“${farewellLine(eliminated.queen)}”</p>
       <div class="footer-actions row">
-        <button onclick="concludeLipSyncEpisode()">Continue to episode results</button>
+        <button onclick="concludeLipSyncEpisode()">Continuar</button>
         <button class="secondary" onclick="showTrackRecord()">Track record</button>
       </div>
     </section>`;
+}
+
+function farewellLine(q) {
+  const lines = [
+    `${q.name} says: I may be leaving this stage, but this spotlight is coming with me.`,
+    `${q.name} says: The crown was not mine tonight, but the world still gets all of me.`,
+    `${q.name} says: I came here as a queen, and I leave as a headline.`,
+    `${q.name} says: Tell the girls to keep my mirror clean. I will be back.`
+  ];
+  return pick(lines);
 }
 
 function renderLipSyncBeat(r) {

@@ -94,12 +94,12 @@ const SOCIAL_ACTIONS = [
 ];
 
 const LIP_SYNC_SONGS = [
-  { type: "pop banger", favors: ["energy", "stunts"], trait: "Lip Sync Beast" },
-  { type: "emotional ballad", favors: ["emotion", "lyrics"], trait: "Emotional" },
-  { type: "campy comedy song", favors: ["humor", "lyrics"], trait: "Comedy Instinct" },
-  { type: "dance anthem", favors: ["stunts", "energy"], trait: "Lip Sync Beast" },
-  { type: "dramatic diva song", favors: ["emotion", "energy"], trait: "Competitive" },
-  { type: "old-school disco", favors: ["energy", "humor"], trait: "Professional" }
+  { title: "Neon Heartbreak", artist: "The Velvet Sirens", type: "pop banger", favors: ["energy", "stunts"], trait: "Lip Sync Beast" },
+  { title: "Last Light on the Mirror", artist: "Diva Nocturne", type: "emotional ballad", favors: ["emotion", "lyrics"], trait: "Emotional" },
+  { title: "Oops, I Stole the Spotlight", artist: "Kitty Cabaret", type: "campy comedy song", favors: ["humor", "lyrics"], trait: "Comedy Instinct" },
+  { title: "Runway Siren", artist: "House of Pulse", type: "dance anthem", favors: ["stunts", "energy"], trait: "Lip Sync Beast" },
+  { title: "Crown Me in Thunder", artist: "Electra Divine", type: "dramatic diva song", favors: ["emotion", "energy"], trait: "Competitive" },
+  { title: "Glitter After Midnight", artist: "The Disco Saints", type: "old-school disco", favors: ["energy", "humor"], trait: "Professional" }
 ];
 
 const LIP_SYNC_STRATEGIES = [
