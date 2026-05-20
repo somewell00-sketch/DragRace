@@ -117,3 +117,68 @@ input, select {
 .log { max-height: 320px; overflow: auto; padding-right: 4px; }
 .log p { margin: 0 0 12px; }
 .footer-actions { position: sticky; bottom: 0; padding: 14px 0 0; background: linear-gradient(transparent, rgba(18,0,24,.96) 35%); }
+
+.tv-fade { animation: tvFade .35s ease both; }
+@keyframes tvFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.runway-stage {
+  background-image: radial-gradient(circle at 50% 0%, rgba(255,209,102,.14), transparent 34%), linear-gradient(135deg, rgba(255,79,216,.08), rgba(139,92,246,.10));
+}
+.lip-sync-stage {
+  background-image: radial-gradient(circle at 20% 0%, rgba(255,63,108,.18), transparent 36%), radial-gradient(circle at 80% 30%, rgba(139,92,246,.20), transparent 40%);
+}
+.lower-third {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255,79,216,.85), rgba(139,92,246,.85));
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  font-size: .72rem;
+  font-weight: 900;
+}
+.announcement {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 16px 18px;
+  margin: 10px 0;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.08);
+}
+.safe-card { box-shadow: inset 5px 0 0 rgba(136,247,198,.65); }
+.top-card { box-shadow: inset 5px 0 0 rgba(255,79,216,.75); }
+.low-card { box-shadow: inset 5px 0 0 rgba(255,209,102,.75); }
+.bottom-card { box-shadow: inset 5px 0 0 rgba(255,107,107,.80); }
+.winner-spotlight {
+  margin: 18px 0;
+  padding: 28px;
+  border-radius: 24px;
+  text-align: center;
+  font-size: clamp(2rem, 8vw, 5rem);
+  font-weight: 950;
+  letter-spacing: -.06em;
+  color: #fff5c7;
+  background: radial-gradient(circle, rgba(255,209,102,.24), rgba(255,79,216,.08) 60%, transparent);
+  border: 1px solid rgba(255,209,102,.28);
+}
+.mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.mini-grid span {
+  display: block;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.08);
+  color: var(--muted);
+}
+.badge.low { background: rgba(255,209,102,.16); color: #ffe7a4; }
+.runway-card h3 { font-size: 2.1rem; color: var(--gold); }
