@@ -174,6 +174,7 @@ function startSeason() {
     history: [],
     currentChallenge: null,
     phase: "cast",
+    spectatorMode: false,
     seasonTone: pick(["Messy Season", "Fashion Season", "Redemption Season", "Battle Season"])
   };
   saveGame();
@@ -214,6 +215,7 @@ function labelStat(key) {
 function showEpisodeIntro() {
   const alive = activeQueens();
   if (alive.length <= 4) return showFinale();
+  if (gameState.spectatorMode || player().eliminated) return showSpectatorEpisodeIntro();
   const challenge = CHALLENGES[(gameState.episode - 1) % (CHALLENGES.length - 1)];
   gameState.currentChallenge = clone(challenge);
   gameState.temp = { prep: null, social: null, approach: null, runwayChoice: null, results: null, lip: null, revealStep: 0 };
@@ -229,6 +231,50 @@ function showEpisodeIntro() {
       </div>
       <aside class="panel">${renderPlayerPanel()}</aside>
     </section>`;
+}
+
+
+function showSpectatorEpisodeIntro() {
+  const alive = activeQueens();
+  if (alive.length <= 4) return showFinale();
+  const challenge = CHALLENGES[(gameState.episode - 1) % (CHALLENGES.length - 1)];
+  gameState.currentChallenge = clone(challenge);
+  gameState.temp = { prep: null, social: null, approach: null, runwayChoice: null, results: null, lip: null, revealStep: 0, spectator: true };
+  const focusQueens = shuffle(alive).slice(0, Math.min(3, alive.length));
+  app.innerHTML = `
+    <section class="two-col tv-fade">
+      <div class="panel">
+        <div class="kicker">spectator mode · episode ${gameState.episode}</div>
+        <h2>${challenge.name}</h2>
+        <p>${challenge.description}</p>
+        <p><b>Runway:</b> ${challenge.runway}</p>
+        <p>You are no longer making choices, but the season continues episode by episode. The remaining queens will make their own challenge, runway and lip sync decisions.</p>
+        <h3>Werk Room focus</h3>
+        ${focusQueens.map(q => `<div class="announcement safe-card"><b>${q.name}</b><span>${spectatorConfessional(q)}</span></div>`).join("")}
+        <div class="footer-actions row">
+          <button onclick="watchSpectatorChallenge()">Watch the challenge and runway</button>
+          <button class="secondary" onclick="showStart(Boolean(localStorage.getItem('dragRealitySave')))">Main menu</button>
+        </div>
+      </div>
+      <aside class="panel">${renderRemainingQueensPanel()}</aside>
+    </section>`;
+}
+
+function spectatorConfessional(q) {
+  migrateQueen(q);
+  if (q.wins > 1) return "I know the crown is starting to look like mine.";
+  if (q.bottoms > 1) return "One more mistake and this whole dream could collapse.";
+  if (q.mental.stress > 65) return "The pressure is getting louder than the music.";
+  if (q.mental.confidence > 70) return "Tonight feels like a chance to take control of the season.";
+  return pick(["I need the judges to finally remember my name.", "Nobody is safe when the runway lights come on.", "This is the episode where the story can change."]);
+}
+
+function renderRemainingQueensPanel() {
+  return `<div class="kicker">still competing</div><h3>${activeQueens().length} queens remain</h3>${activeQueens().map(q => `<div class="result-row"><span>${q.name}</span><span class="badge ${q.wins ? 'win' : q.bottoms ? 'bottom' : 'safe'}">${q.wins} WIN · ${q.bottoms} BTM</span></div>`).join("")}`;
+}
+
+function watchSpectatorChallenge() {
+  resolveChallenge();
 }
 
 function renderPlayerPanel() {
@@ -578,6 +624,7 @@ function resolveNpcLipSync() {
   finishLipSync(bottom, pick(LIP_SYNC_STRATEGIES).id);
 }
 
+
 function finishLipSync(bottom, playerStrategy) {
   const song = gameState.temp.lip?.song || pick(LIP_SYNC_SONGS);
   const lipResults = bottom.map(r => {
@@ -585,7 +632,53 @@ function finishLipSync(bottom, playerStrategy) {
     const event = lipSyncEvent(strategy, r.queen);
     return { queen: r.queen, strategy, event, score: lipSyncScore(r.queen, song, strategy, event) };
   }).sort((a, b) => b.score - a.score);
-  const eliminated = lipResults[1].queen;
+  gameState.temp.pendingLipSync = {
+    song,
+    lipResults: lipResults.map(r => ({ queenId: r.queen.id, strategy: r.strategy, event: r.event, score: r.score })),
+    eliminatedId: lipResults[1].queen.id
+  };
+  saveGame();
+  showLipSyncPerformance();
+}
+
+function showLipSyncPerformance() {
+  const pending = gameState.temp.pendingLipSync;
+  const lipResults = pending.lipResults.map(r => ({ ...r, queen: gameState.cast.find(q => q.id === r.queenId) }));
+  const winner = lipResults[0];
+  const eliminated = lipResults[1];
+  app.innerHTML = `
+    <section class="panel tv-fade lip-sync-stage cinematic">
+      <div class="lower-third">lip sync for your life</div>
+      <h2>${lipResults.map(r => r.queen.name).join(" vs ")}</h2>
+      <p>The song is a <b>${pending.song.type}</b>. The lights drop, the back of the stage glows, and the judges watch every beat.</p>
+      <div class="lip-battle">
+        ${lipResults.map(r => renderLipSyncBeat(r)).join("")}
+      </div>
+      <div class="announcement top-card"><b>${winner.queen.name}</b><span>Shantay, you stay.</span></div>
+      <div class="announcement bottom-card"><b>${eliminated.queen.name}</b><span>Sashay away.</span></div>
+      <div class="footer-actions row">
+        <button onclick="concludeLipSyncEpisode()">Continue to episode results</button>
+        <button class="secondary" onclick="showTrackRecord()">Track record</button>
+      </div>
+    </section>`;
+}
+
+function renderLipSyncBeat(r) {
+  const strategy = strategyLabel(r.strategy);
+  const flavor = {
+    emotion: "sells the song through the eyes, holding the room in a quiet grip",
+    stunts: "throws the body into the beat, betting everything on spectacle",
+    lyrics: "locks into every lyric like the words were written for them",
+    humor: "turns the stage into a joke with a sharp punchline",
+    energy: "charges across the stage with full-body urgency"
+  }[r.strategy] || "performs with focus";
+  return `<article class="card lip-card"><div class="kicker">${r.queen.name}</div><h3>${strategy}</h3><p>${r.queen.name} ${flavor}. Then, ${r.event.text}.</p><p><span class="badge">Lip sync score ${r.score}</span></p></article>`;
+}
+
+function concludeLipSyncEpisode() {
+  const pending = gameState.temp.pendingLipSync;
+  const lipResults = pending.lipResults.map(r => ({ ...r, queen: gameState.cast.find(q => q.id === r.queenId) })).sort((a,b) => b.score - a.score);
+  const eliminated = gameState.cast.find(q => q.id === pending.eliminatedId);
   eliminated.eliminated = true;
   eliminated.trackRecord.push({ episode: gameState.episode, challenge: gameState.currentChallenge.name, placement: "ELIM" });
   gameState.eliminatedQueens.push(eliminated);
@@ -597,6 +690,7 @@ function finishLipSync(bottom, playerStrategy) {
     if (r.placement === "HIGH") { r.queen.highs++; r.queen.reputation.fans += 1; gainProgress(r.queen, gameState.currentChallenge.type, 1); }
     if (r.placement === "BTM2") r.queen.bottoms++;
   }
+  progressNonPlayerQueens();
   const episodeLog = {
     episode: gameState.episode,
     challenge: gameState.currentChallenge,
@@ -612,6 +706,23 @@ function finishLipSync(bottom, playerStrategy) {
   gameState.episode++;
   saveGame();
   showEpisodeResults(episodeLog);
+}
+
+function progressNonPlayerQueens() {
+  for (const q of activeQueens().filter(q => !q.isPlayer)) {
+    migrateQueen(q);
+    const last = q.trackRecord.at(-1)?.placement || "SAFE";
+    const growth = last === "WIN" ? 2 : last === "HIGH" ? 1 : Math.random() < 0.45 ? 1 : 0;
+    if (!growth) {
+      adjustMental(q, { burnout: -3, stress: -2 });
+      continue;
+    }
+    const stat = pick(["performance", "creativity", "charisma", "nerve"]);
+    q.stats[stat] = clamp(q.stats[stat] + 1, 1, 10);
+    const prog = pick(Object.keys(q.progression));
+    q.progression[prog] = clamp(q.progression[prog] + growth, 0, 5);
+    adjustMental(q, { confidence: 3 + growth, motivation: 2, burnout: -2 });
+  }
 }
 
 function lipSyncEvent(strategy, q) {
@@ -678,12 +789,31 @@ function showEpisodeResults(log) {
           <p><b>${log.eliminated}</b> sashays away.</p>
         </div>
         <div class="footer-actions row">
-          ${playerEliminated ? `<button onclick="showTrackRecord()">See the season continue</button>` : `<button onclick="showProgressionChoice()">Progress your queen</button>`}
-          <button class="secondary" onclick="showTrackRecord()">Track record</button>
+          ${renderPostEpisodeActions(log)}
         </div>
       </div>
       <aside class="panel"><h3>Judges say</h3>${renderCritiques()}</aside>
     </section>`;
+}
+
+
+function renderPostEpisodeActions(log) {
+  const justEliminated = log.eliminated === player().name;
+  if (justEliminated && !gameState.spectatorMode) {
+    return `<button onclick="showStart(Boolean(localStorage.getItem('dragRealitySave')))">Return to main menu</button><button onclick="continueAsSpectator()">Continue watching the season</button><button class="secondary" onclick="showTrackRecord()">Track record</button>`;
+  }
+  if (player().eliminated || gameState.spectatorMode) {
+    const next = activeQueens().length <= 4 ? "Go to finale" : "Watch next episode";
+    return `<button onclick="continueAsSpectator()">${next}</button><button class="secondary" onclick="showTrackRecord()">Track record</button><button class="secondary" onclick="showStart(Boolean(localStorage.getItem('dragRealitySave')))">Main menu</button>`;
+  }
+  return `<button onclick="showProgressionChoice()">Progress your queen</button><button class="secondary" onclick="showTrackRecord()">Track record</button>`;
+}
+
+function continueAsSpectator() {
+  gameState.spectatorMode = true;
+  saveGame();
+  if (activeQueens().length <= 4) return showFinale();
+  showEpisodeIntro();
 }
 
 function showProgressionChoice() {
@@ -797,6 +927,7 @@ function loadGame() {
   gameState = JSON.parse(save);
   gameState.cast.forEach(migrateQueen);
   gameState.player = gameState.cast.find(q => q.isPlayer) || gameState.player;
+  gameState.spectatorMode ||= false;
   showTrackRecord();
 }
 

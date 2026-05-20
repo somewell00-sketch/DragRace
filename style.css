@@ -182,3 +182,28 @@ input, select {
 }
 .badge.low { background: rgba(255,209,102,.16); color: #ffe7a4; }
 .runway-card h3 { font-size: 2.1rem; color: var(--gold); }
+
+.cinematic {
+  position: relative;
+  overflow: hidden;
+}
+.cinematic::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: radial-gradient(circle, rgba(255,255,255,.10), transparent 42%);
+  pointer-events: none;
+}
+.lip-battle {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.lip-card {
+  border-color: rgba(255,79,216,.35);
+  background: linear-gradient(180deg, rgba(255,79,216,.16), rgba(255,255,255,.06));
+}
+.lip-card h3 {
+  text-transform: capitalize;
+}
