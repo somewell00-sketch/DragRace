@@ -47,6 +47,74 @@ const CHALLENGE_APPROACHES = {
   ]
 };
 
+
+const LIP_SYNC_SONGS = [
+  {
+    id: "club_anthem",
+    type: "club anthem",
+    favors: ["energy", "stunts"],
+    trait: "Lip Sync Beast",
+    intro: "The bass hits first, then the lights begin chasing the queens across the stage."
+  },
+  {
+    id: "power_ballad",
+    type: "power ballad",
+    favors: ["emotion", "lyrics"],
+    trait: "Emotional",
+    intro: "The first note hangs in the air, demanding control, face, and real feeling."
+  },
+  {
+    id: "camp_pop",
+    type: "camp pop number",
+    favors: ["humor", "energy"],
+    trait: "Meme Queen",
+    intro: "The judges are waiting for timing, stupidity, and one perfect camera moment."
+  },
+  {
+    id: "diva_classic",
+    type: "diva classic",
+    favors: ["lyrics", "emotion"],
+    trait: "Pageant Polish",
+    intro: "Every lyric needs intention. Every pose needs to feel expensive."
+  },
+  {
+    id: "dance_break",
+    type: "dance break track",
+    favors: ["stunts", "energy"],
+    trait: "Dance Training",
+    intro: "The tempo leaves almost no place to hide."
+  }
+];
+
+const LIP_SYNC_STRATEGIES = [
+  {
+    id: "emotion",
+    label: "Emotional connection",
+    text: "Sell the song through face, vulnerability and control."
+  },
+  {
+    id: "stunts",
+    label: "Stunts and reveals",
+    text: "Go for splits, reveals and shock moments. High reward, high risk."
+  },
+  {
+    id: "lyrics",
+    label: "Lyric precision",
+    text: "Lock into every word and make the song look written for you."
+  },
+  {
+    id: "humor",
+    label: "Comedy interpretation",
+    text: "Turn the song into a character moment and try to make the judges laugh."
+  },
+  {
+    id: "energy",
+    label: "Full-stage energy",
+    text: "Use movement, urgency and presence to dominate the camera."
+  }
+];
+
+
 const RUNWAY_CHOICES = [
   { id: "signature", label: "Signature look", text: "A reliable look that represents your drag clearly.", budget: 100, score: 62, originality: 5, polish: 6, risk: 0.12 },
   { id: "designer", label: "Call a designer contact", text: "A more expensive, polished runway package.", budget: 320, score: 76, originality: 6, polish: 9, risk: 0.10 },
