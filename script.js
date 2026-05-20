@@ -588,16 +588,28 @@ function renderRunwayScoreCards(results) {
 function showPlayerLipSync(bottom) {
   const song = pick(LIP_SYNC_SONGS);
   gameState.temp.lip = { song };
+  const opponent = bottom.find(r => !r.queen.isPlayer).queen;
   app.innerHTML = `
-    <section class="two-col tv-fade lip-sync-stage">
-      <div class="panel">
-        <div class="kicker">bottom two</div>
-        <h2>Lip sync for your life</h2>
-        <p>You are in the bottom against <b>${bottom.find(r => !r.queen.isPlayer).queen.name}</b>. The song is a <b>${song.type}</b>.</p>
-        <h3>Choose your strategy</h3>
-        ${LIP_SYNC_STRATEGIES.map(s => `<button class="choice-card" onclick="resolvePlayerLipSync('${s.id}')">${s.label}</button>`).join("")}
+    <section class="panel tv-fade lip-sync-stage cinematic lip-sync-fullscreen">
+      <div class="lower-third">lip sync for your life</div>
+      <h2>${player().name} vs ${opponent.name}</h2>
+      <p class="stage-direction">The main stage goes dark. A single spotlight cuts across the floor. The song is a <b>${song.type}</b>, and every judge is watching for survival, not safety.</p>
+      <div class="lip-battle pre-battle">
+        <article class="card lip-card hero-lip-card">
+          <div class="kicker">you</div>
+          <h3>${player().name}</h3>
+          <p>Choose the kind of moment you want to create. This will shape the performance, the risk, and the final edit.</p>
+        </article>
+        <article class="card lip-card hero-lip-card">
+          <div class="kicker">opponent</div>
+          <h3>${opponent.name}</h3>
+          <p>${opponent.name} steps to the other side of the stage, trying to read your energy before the first beat drops.</p>
+        </article>
       </div>
-      <aside class="panel">${renderResultsSummary(false)}</aside>
+      <h3>Choose your lip sync strategy</h3>
+      <div class="strategy-grid">
+        ${LIP_SYNC_STRATEGIES.map(s => `<button class="choice-card" onclick="resolvePlayerLipSync('${s.id}')">${s.label}<small>${lipStrategyHint(s.id)}</small></button>`).join("")}
+      </div>
     </section>`;
 }
 
@@ -605,10 +617,13 @@ function showNpcLipSyncIntro(bottom) {
   const song = pick(LIP_SYNC_SONGS);
   gameState.temp.lip = { song };
   app.innerHTML = `
-    <section class="panel tv-fade lip-sync-stage">
-      <div class="kicker">lip sync for your life</div>
+    <section class="panel tv-fade lip-sync-stage cinematic lip-sync-fullscreen">
+      <div class="lower-third">lip sync for your life</div>
       <h2>${bottom.map(r => r.queen.name).join(" vs ")}</h2>
-      <p>The bottom two prepare for a <b>${song.type}</b>. You watch from the back, knowing the edit is still recording reactions.</p>
+      <p class="stage-direction">The safe queens step back. The lights drop into deep pink and violet. The song is a <b>${song.type}</b>.</p>
+      <div class="lip-battle pre-battle">
+        ${bottom.map(r => `<article class="card lip-card hero-lip-card"><div class="kicker">bottom two</div><h3>${r.queen.name}</h3><p>${r.queen.name} takes position, trying to turn a bad critique into one unforgettable stage moment.</p></article>`).join("")}
+      </div>
       <div class="footer-actions"><button onclick="resolveNpcLipSync()">Start the lip sync</button></div>
     </section>`;
 }
@@ -624,7 +639,6 @@ function resolveNpcLipSync() {
   finishLipSync(bottom, pick(LIP_SYNC_STRATEGIES).id);
 }
 
-
 function finishLipSync(bottom, playerStrategy) {
   const song = gameState.temp.lip?.song || pick(LIP_SYNC_SONGS);
   const lipResults = bottom.map(r => {
@@ -635,7 +649,8 @@ function finishLipSync(bottom, playerStrategy) {
   gameState.temp.pendingLipSync = {
     song,
     lipResults: lipResults.map(r => ({ queenId: r.queen.id, strategy: r.strategy, event: r.event, score: r.score })),
-    eliminatedId: lipResults[1].queen.id
+    eliminatedId: lipResults[1].queen.id,
+    revealDecision: false
   };
   saveGame();
   showLipSyncPerformance();
@@ -644,18 +659,59 @@ function finishLipSync(bottom, playerStrategy) {
 function showLipSyncPerformance() {
   const pending = gameState.temp.pendingLipSync;
   const lipResults = pending.lipResults.map(r => ({ ...r, queen: gameState.cast.find(q => q.id === r.queenId) }));
-  const winner = lipResults[0];
-  const eliminated = lipResults[1];
+  const [left, right] = lipResults;
   app.innerHTML = `
-    <section class="panel tv-fade lip-sync-stage cinematic">
+    <section class="panel tv-fade lip-sync-stage cinematic lip-sync-fullscreen">
       <div class="lower-third">lip sync for your life</div>
       <h2>${lipResults.map(r => r.queen.name).join(" vs ")}</h2>
-      <p>The song is a <b>${pending.song.type}</b>. The lights drop, the back of the stage glows, and the judges watch every beat.</p>
+      <p class="stage-direction">The song is a <b>${pending.song.type}</b>. The camera cuts between the queens, the judges, and the cast watching from the back of the stage.</p>
+
+      <div class="versus-banner">
+        <span>${left.queen.name}</span>
+        <b>VS</b>
+        <span>${right.queen.name}</span>
+      </div>
+
+      <div class="lip-moment-timeline">
+        ${renderLipSyncTimeline(lipResults)}
+      </div>
+
       <div class="lip-battle">
         ${lipResults.map(r => renderLipSyncBeat(r)).join("")}
       </div>
-      <div class="announcement top-card"><b>${winner.queen.name}</b><span>Shantay, you stay.</span></div>
-      <div class="announcement bottom-card"><b>${eliminated.queen.name}</b><span>Sashay away.</span></div>
+
+      <div class="footer-actions row">
+        <button onclick="showLipSyncDecision()">Reveal the judges' decision</button>
+        <button class="secondary" onclick="showTrackRecord()">Track record</button>
+      </div>
+    </section>`;
+}
+
+function renderLipSyncTimeline(lipResults) {
+  const first = lipResults[0];
+  const second = lipResults[1];
+  return `
+    <div class="timeline-beat"><b>Opening beat</b><p>${first.queen.name} catches the first lyric with ${strategyLabel(first.strategy)}, while ${second.queen.name} answers with ${strategyLabel(second.strategy)}.</p></div>
+    <div class="timeline-beat"><b>First judge reaction</b><p>${first.event.text}. The judges lean forward, trying to decide whether the moment is controlled or chaotic.</p></div>
+    <div class="timeline-beat"><b>Mid-song risk</b><p>${second.event.text}. The cast at the back reacts as the performance starts to split into two very different interpretations.</p></div>
+    <div class="timeline-beat"><b>Final chorus</b><p>Both queens push for the last camera shot. One feels inevitable. The other looks like they are fighting the edit itself.</p></div>`;
+}
+
+function showLipSyncDecision() {
+  const pending = gameState.temp.pendingLipSync;
+  const lipResults = pending.lipResults.map(r => ({ ...r, queen: gameState.cast.find(q => q.id === r.queenId) })).sort((a, b) => b.score - a.score);
+  const winner = lipResults[0];
+  const eliminated = lipResults[1];
+  app.innerHTML = `
+    <section class="panel tv-fade lip-sync-stage cinematic lip-sync-fullscreen decision-screen">
+      <div class="lower-third">judges' decision</div>
+      <h2>Silence on the main stage</h2>
+      <p class="stage-direction">The music ends. Both queens hold their final pose. The judges confer, and the room waits.</p>
+      <div class="decision-stack">
+        <div class="announcement top-card decision-card"><b>${winner.queen.name}</b><span>Shantay, you stay.</span></div>
+        <div class="announcement bottom-card decision-card"><b>${eliminated.queen.name}</b><span>Sashay away.</span></div>
+      </div>
+      <p class="mirror-line">${eliminated.queen.name} leaves the stage with one last look back at the lights.</p>
       <div class="footer-actions row">
         <button onclick="concludeLipSyncEpisode()">Continue to episode results</button>
         <button class="secondary" onclick="showTrackRecord()">Track record</button>
@@ -672,7 +728,23 @@ function renderLipSyncBeat(r) {
     humor: "turns the stage into a joke with a sharp punchline",
     energy: "charges across the stage with full-body urgency"
   }[r.strategy] || "performs with focus";
-  return `<article class="card lip-card"><div class="kicker">${r.queen.name}</div><h3>${strategy}</h3><p>${r.queen.name} ${flavor}. Then, ${r.event.text}.</p><p><span class="badge">Lip sync score ${r.score}</span></p></article>`;
+  return `<article class="card lip-card"><div class="kicker">${r.queen.name}</div><h3>${strategy}</h3><p>${r.queen.name} ${flavor}. Then, ${r.event.text}.</p><div class="mini-grid"><span>Emotion: ${lipMetric(r, "emotion")}</span><span>Technique: ${lipMetric(r, "technique")}</span><span>Presence: ${lipMetric(r, "presence")}</span><span>Risk: ${lipMetric(r, "risk")}</span></div></article>`;
+}
+
+function lipMetric(r, type) {
+  const base = Math.round(r.score);
+  const adjustments = { emotion: r.strategy === "emotion" ? 8 : 0, technique: r.strategy === "lyrics" ? 8 : 0, presence: r.strategy === "energy" || r.strategy === "humor" ? 8 : 0, risk: r.strategy === "stunts" ? 10 : 2 };
+  return clamp(base + (adjustments[type] || 0), 1, 30);
+}
+
+function lipStrategyHint(id) {
+  return {
+    emotion: "Safer in ballads, strong if your confidence is high.",
+    stunts: "High reward, but the reveal or trick can fail.",
+    lyrics: "Precise and controlled, especially good for wordy songs.",
+    humor: "Can steal the judges' attention, but may undercut drama.",
+    energy: "Strong for dance songs, risky if stress is high."
+  }[id] || "A performance choice with risk and reward.";
 }
 
 function concludeLipSyncEpisode() {
@@ -783,11 +855,7 @@ function showEpisodeResults(log) {
         <p>${log.social?.text || "The cast watches the edit form around them."}</p>
         ${log.approach ? `<p><b>Challenge choice:</b> ${log.approach.label}. ${log.approach.failed ? "The risk hurt you." : "The decision paid off."}</p>` : ""}
         ${renderResultsSummary(true)}
-        <div class="panel lip-sync-stage" style="margin-top:14px">
-          <h3>Lip sync</h3>
-          <p>${log.lipResults.map(r => `<b>${r.name}</b> used ${strategyLabel(r.strategy)}. Moment: ${r.event}. Score: ${r.score}`).join("<br>")}</p>
-          <p><b>${log.eliminated}</b> sashays away.</p>
-        </div>
+        <p class="muted"><b>${log.eliminated}</b> was eliminated after the dedicated lip sync scene.</p>
         <div class="footer-actions row">
           ${renderPostEpisodeActions(log)}
         </div>
